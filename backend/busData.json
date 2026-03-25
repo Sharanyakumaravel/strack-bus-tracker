@@ -1,0 +1,12 @@
+[
+  {
+    "busName": "Bus 1",
+    "latitude": 10.7905,
+    "longitude": 78.7047
+  },
+  {
+    "busName": "Bus 2",
+    "latitude": 10.7920,
+    "longitude": 78.7065
+  }
+]

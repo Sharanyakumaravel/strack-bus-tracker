@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title>Driver Location Update</title>
+</head>
+
+<body>
+
+<h2>Driver Location Panel</h2>
+
+<label>Bus ID</label><br> <input id="busId"><br><br>
+
+<label>Latitude</label><br> <input id="lat"><br><br>
+
+<label>Longitude</label><br> <input id="lng"><br><br>
+
+<button onclick="sendLocation()">Update Location</button>
+
+<script>
+
+async function sendLocation(){
+
+const id = document.getElementById("busId").value;
+const latitude = document.getElementById("lat").value;
+const longitude = document.getElementById("lng").value;
+
+await fetch("http://localhost:5000/api/updateLocation",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+id,
+latitude,
+longitude
+})
+
+});
+
+alert("Location Updated");
+
+}
+
+</script>
+
+</body>
+
+</html>
