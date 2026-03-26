@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
@@ -11,12 +12,7 @@ app.use(express.json());
 // ============================
 // MongoDB Connection
 // ============================
-const MONGO_URI = process.env.MONGO_URI;
-
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGO_URI)
 .then(() => {
   console.log("MongoDB Connected");
 })
@@ -40,6 +36,13 @@ const busSchema = new mongoose.Schema({
 const Bus = mongoose.model("Bus", busSchema);
 
 // ============================
+// Home Route (Fix for Cannot GET /)
+// ============================
+app.get("/", (req, res) => {
+  res.send("Bus Tracker Backend Running 🚍");
+});
+
+// ============================
 // API Routes
 // ============================
 
@@ -57,6 +60,7 @@ app.post("/update-location", async (req, res) => {
     await bus.save();
 
     res.json({ message: "Location updated successfully" });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -71,6 +75,11 @@ app.get("/bus-locations", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// ============================
+// Serve Frontend
+// ============================
+app.use("/frontend", express.static(path.join(__dirname, "../frontend")));
 
 // ============================
 // Start Server
