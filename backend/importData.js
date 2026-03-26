@@ -1,104 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>STrack Bus Tracker</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-body{
-    margin:0;
-    font-family: Arial, sans-serif;
-    background:black;
-    color:white;
-    text-align:center;
-}
 
-h1{
-    padding:10px;
+body{
+margin:0;
+font-family:Arial;
+text-align:center;
 }
 
 #map{
-    height:500px;
-    width:90%;
-    margin:auto;
+height:500px;
+width:100%;
 }
 
-#arrival{
-    margin-top:10px;
-    font-size:18px;
-}
 </style>
+
 </head>
 
 <body>
 
-<h1>STrack Live Bus Tracking</h1>
+<h2>🚍 STrack Live Bus Tracker</h2>
 
 <div id="map"></div>
 
-<p id="arrival">Bus arrival time will appear here</p>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 
-// Create map
-var map = L.map('map').setView([10.7905, 78.7047], 13);
+// Create Map
+var map = L.map('map').setView([10.7905,78.7047],13);
 
 // Map tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'Map data © OpenStreetMap contributors'
+attribution:'© OpenStreetMap'
 }).addTo(map);
 
-let marker;
 
-// Function to load bus data
-async function loadBusLocation(){
+// ===========================
+// Bus Route Coordinates
+// ===========================
 
-    try{
+var route = [
+[10.7905,78.7047],
+[10.7920,78.7070],
+[10.7950,78.7100],
+[10.7980,78.7130]
+];
 
-        const response = await fetch("https://strack-bus-tracker.onrender.com/bus-locations");
+// Draw route line
+var routeLine = L.polyline(route,{
+color:'blue',
+weight:5
+}).addTo(map);
 
-        const data = await response.json();
 
-        if(data.length > 0){
+// ===========================
+// Bus Stops
+// ===========================
 
-            const bus = data[0];
+var stops = [
+[10.7905,78.7047],
+[10.7950,78.7100],
+[10.7980,78.7130]
+];
 
-            const lat = bus.latitude;
-            const lon = bus.longitude;
+stops.forEach(stop=>{
+L.marker(stop)
+.addTo(map)
+.bindPopup("Bus Stop");
+});
 
-            if(marker){
-                map.removeLayer(marker);
-            }
 
-            marker = L.marker([lat,lon]).addTo(map)
-            .bindPopup("Bus ID: "+bus.busId)
-            .openPopup();
+// ===========================
+// Bus Marker
+// ===========================
 
-            map.setView([lat,lon],13);
+var busMarker;
 
-            document.getElementById("arrival").innerText =
-            "Bus Last Updated: "+ new Date(bus.timestamp).toLocaleTimeString();
 
-        }
+// ===========================
+// Load Bus Location
+// ===========================
 
-    }
-    catch(error){
-        console.log("Error fetching bus location",error);
-    }
+async function loadBus(){
+
+try{
+
+const response = await fetch("http://localhost:5000/bus-locations");
+
+const buses = await response.json();
+
+if(buses.length>0){
+
+const bus = buses[0];
+
+const lat = bus.latitude;
+const lng = bus.longitude;
+
+if(busMarker){
+map.removeLayer(busMarker);
+}
+
+busMarker = L.marker([lat,lng])
+.addTo(map)
+.bindPopup("🚍 Bus ID: "+bus.busId)
+.openPopup();
+
+map.setView([lat,lng],14);
 
 }
 
-// Load first time
-loadBusLocation();
+}catch(error){
+console.log(error);
+}
 
-// Auto refresh every 5 seconds
-setInterval(loadBusLocation,5000);
+}
+
+
+// First load
+loadBus();
+
+// Refresh every 5 seconds
+setInterval(loadBus,5000);
 
 </script>
 
