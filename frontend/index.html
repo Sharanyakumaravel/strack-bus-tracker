@@ -1,36 +1,138 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
-<title>STrack Bus Tracker</title>
+<meta charset="utf-8">
+<title>S‑Track Bus Tracker</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-<link rel="stylesheet" href="style.css">
-
 <style>
+body{
+margin:0;
+font-family:Arial;
+}
+
 #map{
-height:500px;
+height:100vh;
+width:100%;
+}
+
+.title{
+position:absolute;
+top:10px;
+left:50%;
+transform:translateX(-50%);
+background:white;
+padding:10px 20px;
+border-radius:8px;
+font-weight:bold;
+z-index:1000;
+box-shadow:0 2px 6px rgba(0,0,0,0.3);
 }
 </style>
-
 </head>
 
 <body>
 
-<h2>STrack Live Bus Tracking</h2>
-
+<div class="title">🚍 S‑Track Live Bus Tracker</div>
 <div id="map"></div>
-
-<div id="eta" style="font-size:20px; margin-top:10px;">
-Bus arrival time will appear here
-</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script src="map.js"></script>
+<script>
+
+// ============================
+// Map Setup
+// ============================
+
+var map = L.map('map').setView([13.0827, 80.2707], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+maxZoom:19
+}).addTo(map);
+
+
+// ============================
+// Bus Stops
+// ============================
+
+const stops = [
+[13.0827,80.2707,"Central Bus Stop"],
+[13.0845,80.2720,"College Stop"],
+[13.0870,80.2750,"Market Stop"],
+[13.0900,80.2780,"Hospital Stop"]
+];
+
+stops.forEach(stop=>{
+L.marker([stop[0],stop[1]])
+.addTo(map)
+.bindPopup("📍 "+stop[2]);
+});
+
+
+// ============================
+// Route Line
+// ============================
+
+const routeCoordinates = stops.map(s=>[s[0],s[1]]);
+
+L.polyline(routeCoordinates,{
+color:'blue',
+weight:5
+}).addTo(map);
+
+
+// ============================
+// Bus Icon
+// ============================
+
+const busIcon = L.icon({
+iconUrl:'https://cdn-icons-png.flaticon.com/512/61/61231.png',
+iconSize:[40,40]
+});
+
+let busMarker = L.marker([13.0827,80.2707],{icon:busIcon}).addTo(map)
+.bindPopup("🚍 Bus 101");
+
+
+// ============================
+// Fetch Bus Location
+// ============================
+
+async function updateBus(){
+
+try{
+
+const response = await fetch("/bus-locations");
+const data = await response.json();
+
+if(data.length > 0){
+
+const bus = data[0];
+
+const lat = bus.latitude;
+const lng = bus.longitude;
+
+busMarker.setLatLng([lat,lng]);
+
+}
+
+}catch(error){
+
+console.log("Error fetching location",error);
+
+}
+
+}
+
+
+// ============================
+// Live Update Every 3 Seconds
+// ============================
+
+setInterval(updateBus,3000);
+
+</script>
 
 </body>
-
 </html>
