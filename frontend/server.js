@@ -9,18 +9,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// =============================
-// MongoDB Connection
-// =============================
-
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
-// =============================
 // Bus Schema
-// =============================
-
 const busSchema = new mongoose.Schema({
   busId: String,
   latitude: Number,
@@ -33,10 +27,7 @@ const busSchema = new mongoose.Schema({
 
 const Bus = mongoose.model("Bus", busSchema);
 
-// =============================
-// API - Update Bus Location
-// =============================
-
+// Save bus location
 app.post("/update-bus-location", async (req, res) => {
 
   const { busId, latitude, longitude } = req.body;
@@ -51,24 +42,17 @@ app.post("/update-bus-location", async (req, res) => {
 
     await bus.save();
 
-    res.json({
-      message: "Bus location saved"
-    });
+    res.json({ message: "Location saved" });
 
   } catch (error) {
 
-    res.status(500).json({
-      error: "Error saving bus location"
-    });
+    res.status(500).json({ error: "Error saving location" });
 
   }
 
 });
 
-// =============================
-// API - Get Bus Locations
-// =============================
-
+// Get bus locations
 app.get("/bus-locations", async (req, res) => {
 
   try {
@@ -79,28 +63,22 @@ app.get("/bus-locations", async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({
-      error: "Error fetching bus locations"
-    });
+    res.status(500).json({ error: "Error fetching buses" });
 
   }
 
 });
 
-// =============================
-// Serve Frontend Website
-// =============================
+// Serve frontend folder
+const frontendPath = path.join(__dirname, "../frontend");
 
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(frontendPath));
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-// =============================
-// Start Server
-// =============================
-
+// Start server
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
