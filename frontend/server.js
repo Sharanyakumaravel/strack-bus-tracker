@@ -2,23 +2,25 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+require("dotenv").config();
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
+// ============================
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI || "your-mongodb-url", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+// ============================
+
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
-// Bus Schema
-const BusSchema = new mongoose.Schema({
+// ============================
+// Bus Location Schema
+// ============================
+
+const busSchema = new mongoose.Schema({
   busId: String,
   latitude: Number,
   longitude: Number,
@@ -28,12 +30,17 @@ const BusSchema = new mongoose.Schema({
   }
 });
 
-const Bus = mongoose.model("Bus", BusSchema);
+const Bus = mongoose.model("Bus", busSchema);
 
-// API to update bus location
+// ============================
+// API: Update Bus Location
+// ============================
+
 app.post("/update-bus-location", async (req, res) => {
+
+  const { busId, latitude, longitude } = req.body;
+
   try {
-    const { busId, latitude, longitude } = req.body;
 
     const newLocation = new Bus({
       busId,
@@ -43,30 +50,56 @@ app.post("/update-bus-location", async (req, res) => {
 
     await newLocation.save();
 
-    res.json({ message: "Location updated" });
+    res.json({
+      message: "Bus location updated"
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+
+    res.status(500).json({
+      error: "Error saving location"
+    });
+
   }
+
 });
 
-// API to get bus locations
+// ============================
+// API: Get Bus Locations
+// ============================
+
 app.get("/bus-locations", async (req, res) => {
+
   try {
-    const locations = await Bus.find().sort({ timestamp: -1 }).limit(10);
-    res.json(locations);
+
+    const buses = await Bus.find().sort({ timestamp: -1 });
+
+    res.json(buses);
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+
+    res.status(500).json({
+      error: "Error fetching bus locations"
+    });
+
   }
+
 });
 
-// Serve frontend files
+// ============================
+// Serve Frontend
+// ============================
+
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-// Port
+// ============================
+// Server Start
+// ============================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
