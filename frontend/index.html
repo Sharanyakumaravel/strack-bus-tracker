@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>S‑Track Bus Tracker</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -18,7 +21,7 @@ height:100vh;
 width:100%;
 }
 
-/* Mobile Friendly Header */
+/* Header */
 
 .header{
 position:absolute;
@@ -33,6 +36,8 @@ z-index:1000;
 box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 
+/* Arrival Time */
+
 .arrival{
 position:absolute;
 bottom:10px;
@@ -45,6 +50,19 @@ z-index:1000;
 box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 
+/* Dashboard */
+
+#dashboard{
+position:absolute;
+top:70px;
+right:10px;
+background:white;
+padding:10px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.3);
+z-index:1000;
+}
+
 </style>
 
 </head>
@@ -52,8 +70,17 @@ box-shadow:0 2px 8px rgba(0,0,0,0.3);
 <body>
 
 <div class="header">🚍 S‑Track Live Bus Tracker</div>
+
 <div id="map"></div>
-<div class="arrival" id="arrivalTime">⏱ Calculating arrival...</div>
+
+<div class="arrival" id="arrivalTime">
+⏱ Calculating arrival...
+</div>
+
+<div id="dashboard">
+<h3>🚍 Active Buses</h3>
+<ul id="busList"></ul>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -69,7 +96,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 maxZoom:19
 }).addTo(map);
 
-
 // ============================
 // Bus Stops
 // ============================
@@ -81,12 +107,17 @@ const stops = [
 [13.0900,80.2780,"Hospital Stop"]
 ];
 
+let stopMarkers = [];
+
 stops.forEach(stop=>{
-L.marker([stop[0],stop[1]])
+
+let marker = L.marker([stop[0],stop[1]])
 .addTo(map)
 .bindPopup("📍 "+stop[2]);
-});
 
+stopMarkers.push(marker);
+
+});
 
 // ============================
 // Route Line
@@ -95,86 +126,49 @@ L.marker([stop[0],stop[1]])
 const route = stops.map(s=>[s[0],s[1]]);
 
 L.polyline(route,{
-color:'blue',
-weight:5
+color:"red",
+weight:6
 }).addTo(map);
-
 
 // ============================
 // Bus Icon
 // ============================
 
 const busIcon = L.icon({
-iconUrl:'https://cdn-icons-png.flaticon.com/512/61/61231.png',
+iconUrl:"https://cdn-icons-png.flaticon.com/512/744/744465.png",
 iconSize:[40,40]
 });
 
-let currentPosition = [13.0827,80.2707];
-
-let busMarker = L.marker(currentPosition,{icon:busIcon})
-.addTo(map)
-.bindPopup("🚍 Bus 101");
-
-
 // ============================
-// Smooth Animation Function
+// Bus Markers
 // ============================
 
-function animateBus(newLat,newLng){
-
-let startLat = currentPosition[0];
-let startLng = currentPosition[1];
-
-let steps = 50;
-let i = 0;
-
-let interval = setInterval(()=>{
-
-i++;
-
-let lat = startLat + (newLat-startLat)*(i/steps);
-let lng = startLng + (newLng-startLng)*(i/steps);
-
-busMarker.setLatLng([lat,lng]);
-
-if(i>=steps){
-
-clearInterval(interval);
-currentPosition=[newLat,newLng];
-
-}
-
-},60);
-
-}
-
+let busMarkers = {};
 
 // ============================
-// Arrival Time Prediction
+// Arrival Time Calculation
 // ============================
 
-function calculateArrival(lat,lng){
+function calculateArrival(busLat,busLng){
 
 let lastStop = stops[stops.length-1];
 
-let distance =
-Math.sqrt(
-Math.pow(lastStop[0]-lat,2) +
-Math.pow(lastStop[1]-lng,2)
+let distance = map.distance(
+[busLat,busLng],
+[lastStop[0],lastStop[1]]
 );
 
-let speed = 0.002;
+let speed = 40;
 
-let time = Math.round(distance/speed);
+let time = Math.round((distance/1000)/speed*60);
 
-document.getElementById("arrivalTime")
-.innerHTML = "⏱ Arrival in ~ "+time+" mins";
+document.getElementById("arrivalTime").innerHTML =
+"⏱ Arrival in ~ "+time+" mins";
 
 }
 
-
 // ============================
-// Fetch Bus Location
+// Fetch Bus Locations
 // ============================
 
 async function updateBus(){
@@ -184,15 +178,39 @@ try{
 const res = await fetch("/bus-locations");
 const data = await res.json();
 
-if(data.length>0){
+// Update dashboard
 
-let bus=data[0];
+let list = document.getElementById("busList");
+list.innerHTML="";
 
-animateBus(bus.latitude,bus.longitude);
+data.forEach(bus=>{
+
+let li=document.createElement("li");
+li.innerText=bus.busId;
+list.appendChild(li);
+
+// Create marker if not exists
+
+if(!busMarkers[bus.busId]){
+
+busMarkers[bus.busId] = L.marker(
+[bus.latitude,bus.longitude],
+{icon:busIcon}
+)
+.addTo(map)
+.bindPopup("🚍 "+bus.busId);
+
+}else{
+
+busMarkers[bus.busId].setLatLng(
+[bus.latitude,bus.longitude]
+);
+
+}
 
 calculateArrival(bus.latitude,bus.longitude);
 
-}
+});
 
 }catch(err){
 
@@ -201,7 +219,6 @@ console.log(err);
 }
 
 }
-
 
 // ============================
 // Live Update
