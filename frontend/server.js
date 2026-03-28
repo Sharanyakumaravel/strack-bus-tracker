@@ -5,20 +5,21 @@ const path = require("path");
 require("dotenv").config();
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// ============================
+// =============================
 // MongoDB Connection
-// ============================
+// =============================
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
-// ============================
-// Bus Location Schema
-// ============================
+// =============================
+// Bus Schema
+// =============================
 
 const busSchema = new mongoose.Schema({
   busId: String,
@@ -32,9 +33,9 @@ const busSchema = new mongoose.Schema({
 
 const Bus = mongoose.model("Bus", busSchema);
 
-// ============================
-// API: Update Bus Location
-// ============================
+// =============================
+// API - Update Bus Location
+// =============================
 
 app.post("/update-bus-location", async (req, res) => {
 
@@ -42,31 +43,31 @@ app.post("/update-bus-location", async (req, res) => {
 
   try {
 
-    const newLocation = new Bus({
+    const bus = new Bus({
       busId,
       latitude,
       longitude
     });
 
-    await newLocation.save();
+    await bus.save();
 
     res.json({
-      message: "Bus location updated"
+      message: "Bus location saved"
     });
 
   } catch (error) {
 
     res.status(500).json({
-      error: "Error saving location"
+      error: "Error saving bus location"
     });
 
   }
 
 });
 
-// ============================
-// API: Get Bus Locations
-// ============================
+// =============================
+// API - Get Bus Locations
+// =============================
 
 app.get("/bus-locations", async (req, res) => {
 
@@ -86,9 +87,9 @@ app.get("/bus-locations", async (req, res) => {
 
 });
 
-// ============================
-// Serve Frontend
-// ============================
+// =============================
+// Serve Frontend Website
+// =============================
 
 app.use(express.static(path.join(__dirname, "../frontend")));
 
@@ -96,11 +97,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-// ============================
-// Server Start
-// ============================
+// =============================
+// Start Server
+// =============================
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
